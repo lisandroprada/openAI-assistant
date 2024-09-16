@@ -11,7 +11,7 @@ let threads = [];
 
 export const createAssistant = async (req, res) => {
   try {
-    assistant = await openai.beta.assistants.create({
+    const assistant = await openai.beta.assistants.create({
       name: "Math Tutor",
       instructions:
         "You are a personal math tutor. Write and run code to answer math questions.",
@@ -21,6 +21,18 @@ export const createAssistant = async (req, res) => {
     res
       .status(200)
       .json({ message: "Assistant created successfully", assistant });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const listAssistants = async (req, res) => {
+  try {
+    const myAssistants = await openai.beta.assistants.list({
+      order: "desc",
+      limit: 20,
+    });
+    res.status(200).json({ assistants: myAssistants.data });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -37,7 +49,7 @@ export const createThread = async (req, res) => {
 };
 
 export const sendMessage = async (req, res) => {
-  const { content, threadId } = req.body;
+  const { content, threadId, assistantId } = req.body;
   try {
     await openai.beta.threads.messages.create(threadId, {
       role: "user",
@@ -45,7 +57,7 @@ export const sendMessage = async (req, res) => {
     });
 
     const run = await openai.beta.threads.runs.create(threadId, {
-      assistant_id: assistant.id,
+      assistant_id: assistantId,
     });
 
     res.status(200).json({ message: "Message sent successfully", run });
@@ -71,10 +83,12 @@ export const getRunStatus = async (req, res) => {
       )
       .pop();
 
-    res.status(200).json({
-      message: lastMessageForRun.content[0].text.value,
-      status: runStatus.status,
-    });
+    res
+      .status(200)
+      .json({
+        message: lastMessageForRun.content[0].text.value,
+        status: runStatus.status,
+      });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const createAssistantButton = document.getElementById(
     "createAssistantButton",
   );
+  const showAssistantsButton = document.getElementById("showAssistantsButton");
   const createThreadButton = document.getElementById("createThreadButton");
   const showThreadsButton = document.getElementById("showThreadsButton");
   const sendButton = document.getElementById("sendButton");
@@ -9,8 +10,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const messagesDiv = document.getElementById("messages");
   const statusDiv = document.getElementById("status");
   const assistantStatusDiv = document.getElementById("assistantStatus");
+  const assistantsList = document.getElementById("assistantsList");
   const threadsList = document.getElementById("threadsList");
 
+  let assistantId;
   let threadId;
   let runId;
 
@@ -18,6 +21,29 @@ document.addEventListener("DOMContentLoaded", () => {
     const response = await fetch("/api/assistant/create", { method: "POST" });
     const data = await response.json();
     assistantStatusDiv.textContent = data.message;
+  };
+
+  const showAssistants = async () => {
+    const response = await fetch("/api/assistant/assistants");
+    const data = await response.json();
+    assistantsList.innerHTML = "";
+    data.assistants.forEach((assistant) => {
+      const row = document.createElement("tr");
+      row.addEventListener("click", () => {
+        assistantId = assistant.id;
+        assistantStatusDiv.textContent = `Selected Assistant ID: ${assistantId}`;
+      });
+
+      const idCell = document.createElement("td");
+      idCell.textContent = assistant.id;
+      row.appendChild(idCell);
+
+      const descriptionCell = document.createElement("td");
+      descriptionCell.textContent = assistant.name || "No description";
+      row.appendChild(descriptionCell);
+
+      assistantsList.appendChild(row);
+    });
   };
 
   const createThread = async () => {
@@ -32,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const response = await fetch("/api/assistant/message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, threadId }),
+      body: JSON.stringify({ content, threadId, assistantId }),
     });
     const data = await response.json();
     runId = data.run.id;
@@ -81,6 +107,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   createAssistantButton.addEventListener("click", () => {
     createAssistant();
+  });
+
+  showAssistantsButton.addEventListener("click", () => {
+    showAssistants();
   });
 
   createThreadButton.addEventListener("click", () => {
