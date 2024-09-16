@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Math Tutor</title>
+        <link rel="stylesheet" href="/css/styles.css" />
+    </head>
+    <body>
+        <div id="app">
+            <div id="createAssistant">
+                <h2>Create Assistant</h2>
+                <button id="createAssistantButton">Create Assistant</button>
+                <div id="assistantStatus"></div>
+            </div>
+            <div id="threads">
+                <h2>Threads</h2>
+                <button id="createThreadButton">Create Thread</button>
+                <button id="showThreadsButton">Show Threads</button>
+                <ul id="threadsList"></ul>
+            </div>
+            <div id="chat">
+                <h2>Chat</h2>
+                <div id="messages"></div>
+                <input
+                    type="text"
+                    id="userInput"
+                    placeholder="Type your question here..."
+                />
+                <button id="sendButton">Send</button>
+            </div>
+            <div id="runStatus">
+                <h2>Run Status</h2>
+                <div id="status"></div>
+            </div>
+        </div>
+        <script src="/js/app.js"></script>
+    </body>
+</html>
