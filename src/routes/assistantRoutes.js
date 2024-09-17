@@ -3,7 +3,7 @@ import {
   createAssistant,
   createThread,
   sendMessage,
-  getRunStatus,
+  // getRunStatus,
   listThreads,
   getThreadMessages,
   listAssistants,
@@ -15,7 +15,7 @@ router.post("/create", createAssistant);
 router.get("/assistants", listAssistants);
 router.post("/thread", createThread);
 router.post("/message", sendMessage);
-router.get("/run/:threadId/:runId", getRunStatus);
+// router.get("/run/:threadId/:runId", getRunStatus);
 router.get("/threads", listThreads);
 router.get("/thread/:threadId/messages", getThreadMessages);
 

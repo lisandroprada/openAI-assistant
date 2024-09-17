@@ -12,9 +12,9 @@ let threads = [];
 export const createAssistant = async (req, res) => {
   try {
     const assistant = await openai.beta.assistants.create({
-      name: "Math Tutor",
+      name: "Inmobiliario",
       instructions:
-        "You are a personal math tutor. Write and run code to answer math questions.",
+        "Eres un asistente inmobiliario que ayuda a los usuarios a encontrar propiedades en alquiler o venta. Cuando el usuario proporciona información sobre el tipo de operación, la ubicación y el presupuesto, debes extraer esos parámetros y llamar a la función 'buscarPropiedad' con ellos. Si te faltan datos, pregúntale al usuario específicamente por el parámetro faltante.",
       tools: [{ type: "code_interpreter" }],
       model: "gpt-4-1106-preview",
     });
@@ -60,38 +60,50 @@ export const sendMessage = async (req, res) => {
       assistant_id: assistantId,
     });
 
-    res.status(200).json({ message: "Message sent successfully", run });
+    checkRunStatus(res, threadId, run.id);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-export const getRunStatus = async (req, res) => {
-  const { threadId, runId } = req.params;
-  try {
-    let runStatus = await openai.beta.threads.runs.retrieve(threadId, runId);
+const checkRunStatus = async (res, threadId, runId) => {
+  let runStatus = await openai.beta.threads.runs.retrieve(threadId, runId);
+  console.log({ runStatus });
 
-    while (runStatus.status !== "completed") {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      runStatus = await openai.beta.threads.runs.retrieve(threadId, runId);
+  while (runStatus.status !== "completed") {
+    if (runStatus.status === "requires_action") {
+      const toolCalls =
+        runStatus.required_action.submit_tool_outputs.tool_calls;
+      const parsedArgs = JSON.parse(toolCalls[0].function.arguments);
+      const { tipo, ubicacion } = parsedArgs;
+
+      const inmuebles = buscarInmuebles(tipo, ubicacion);
+
+      await openai.beta.threads.runs.submitToolOutputs(threadId, runId, {
+        tool_outputs: [
+          {
+            tool_call_id: toolCalls[0].id,
+            output: JSON.stringify(inmuebles),
+          },
+        ],
+      });
     }
 
-    const messages = await openai.beta.threads.messages.list(threadId);
-    const lastMessageForRun = messages.data
-      .filter(
-        (message) => message.run_id === runId && message.role === "assistant",
-      )
-      .pop();
-
-    res
-      .status(200)
-      .json({
-        message: lastMessageForRun.content[0].text.value,
-        status: runStatus.status,
-      });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    runStatus = await openai.beta.threads.runs.retrieve(threadId, runId);
   }
+
+  const messages = await openai.beta.threads.messages.list(threadId);
+  const lastMessageForRun = messages.data
+    .filter(
+      (message) => message.run_id === runId && message.role === "assistant",
+    )
+    .pop();
+
+  res.status(200).json({
+    message: lastMessageForRun.content[0].text.value,
+    status: runStatus.status,
+  });
 };
 
 export const listThreads = async (req, res) => {
@@ -110,4 +122,15 @@ export const getThreadMessages = async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+};
+
+// Simulación de búsqueda de inmuebles
+const buscarInmuebles = (tipo, ubicacion) => {
+  console.log({ tipo, ubicacion });
+  // Aquí puedes agregar lógica para buscar inmuebles en una base de datos o API externa
+  // Por ahora, devolveremos una lista simulada de inmuebles
+  return [
+    { id: 1, tipo, ubicacion, descripcion: "Inmueble 1", precio: 1000 },
+    { id: 2, tipo, ubicacion, descripcion: "Inmueble 2", precio: 2000 },
+  ];
 };
